@@ -8,6 +8,7 @@ import Icon from '@/components/ui/icon';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UploadTrackDialog } from '@/components/UploadTrackDialog';
+import { SeedButton } from '@/components/SeedButton';
 
 interface Track {
   id: number;
@@ -283,7 +284,7 @@ export default function Index() {
               <p className="text-xl text-muted-foreground mb-6 max-w-2xl">
                 Слушай, скачивай и публикуй треки в киберпространстве
               </p>
-              <div className="flex gap-4">
+              <div className="flex gap-4 flex-wrap">
                 <Button 
                   onClick={() => tracks.length > 0 && playTrack(tracks[0])}
                   className="bg-primary text-primary-foreground hover:bg-primary/90 neon-border font-semibold"
@@ -292,6 +293,7 @@ export default function Index() {
                   Начать слушать
                 </Button>
                 <UploadTrackDialog onTrackUploaded={loadTracks} />
+                {tracks.length === 0 && <SeedButton onComplete={loadTracks} />}
               </div>
             </div>
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl animate-pulse-neon"></div>

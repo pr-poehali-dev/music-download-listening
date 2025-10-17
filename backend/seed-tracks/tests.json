@@ -1,0 +1,15 @@
+{
+  "tests": [
+    {
+      "name": "Seed database with tracks",
+      "method": "POST",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "message": "string",
+        "count": "number"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
