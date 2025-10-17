@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,7 @@ interface Track {
   plays: number;
   likes: number;
   coverUrl: string;
+  audioUrl: string;
 }
 
 interface Artist {
@@ -36,7 +37,8 @@ const mockTracks: Track[] = [
     genre: 'Synthwave',
     plays: 125000,
     likes: 8500,
-    coverUrl: 'https://images.unsplash.com/photo-1614149162883-504ce4d13909?w=400'
+    coverUrl: 'https://images.unsplash.com/photo-1614149162883-504ce4d13909?w=400',
+    audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
   },
   {
     id: 2,
@@ -46,7 +48,8 @@ const mockTracks: Track[] = [
     genre: 'Electronic',
     plays: 98000,
     likes: 6200,
-    coverUrl: 'https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=400'
+    coverUrl: 'https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=400',
+    audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3'
   },
   {
     id: 3,
@@ -56,7 +59,8 @@ const mockTracks: Track[] = [
     genre: 'Cyberpunk',
     plays: 156000,
     likes: 12400,
-    coverUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400'
+    coverUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400',
+    audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3'
   },
   {
     id: 4,
@@ -66,7 +70,8 @@ const mockTracks: Track[] = [
     genre: 'Techno',
     plays: 87500,
     likes: 5100,
-    coverUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400'
+    coverUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400',
+    audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3'
   },
   {
     id: 5,
@@ -76,7 +81,8 @@ const mockTracks: Track[] = [
     genre: 'Synthwave',
     plays: 142000,
     likes: 9800,
-    coverUrl: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400'
+    coverUrl: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400',
+    audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3'
   },
   {
     id: 6,
@@ -86,7 +92,8 @@ const mockTracks: Track[] = [
     genre: 'Electronic',
     plays: 103000,
     likes: 7300,
-    coverUrl: 'https://images.unsplash.com/photo-1487180144351-b8472da7d491?w=400'
+    coverUrl: 'https://images.unsplash.com/photo-1487180144351-b8472da7d491?w=400',
+    audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3'
   }
 ];
 
@@ -103,6 +110,9 @@ export default function Index() {
   const [volume, setVolume] = useState([70]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<string>('all');
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   const genres = ['all', 'Synthwave', 'Electronic', 'Cyberpunk', 'Techno'];
 
@@ -113,6 +123,32 @@ export default function Index() {
     return matchesSearch && matchesGenre;
   });
 
+  useEffect(() => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.play();
+      } else {
+        audioRef.current.pause();
+      }
+    }
+  }, [isPlaying]);
+
+  useEffect(() => {
+    if (audioRef.current && currentTrack) {
+      audioRef.current.src = currentTrack.audioUrl;
+      audioRef.current.load();
+      if (isPlaying) {
+        audioRef.current.play();
+      }
+    }
+  }, [currentTrack]);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume[0] / 100;
+    }
+  }, [volume]);
+
   const playTrack = (track: Track) => {
     setCurrentTrack(track);
     setIsPlaying(true);
@@ -120,6 +156,58 @@ export default function Index() {
 
   const togglePlay = () => {
     setIsPlaying(!isPlaying);
+  };
+
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration);
+    }
+  };
+
+  const handleSeek = (value: number[]) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = value[0];
+      setCurrentTime(value[0]);
+    }
+  };
+
+  const handleDownload = (track: Track) => {
+    const link = document.createElement('a');
+    link.href = track.audioUrl;
+    link.download = `${track.artist} - ${track.title}.mp3`;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const skipToNext = () => {
+    if (currentTrack) {
+      const currentIndex = mockTracks.findIndex(t => t.id === currentTrack.id);
+      const nextTrack = mockTracks[(currentIndex + 1) % mockTracks.length];
+      playTrack(nextTrack);
+    }
+  };
+
+  const skipToPrevious = () => {
+    if (currentTrack) {
+      const currentIndex = mockTracks.findIndex(t => t.id === currentTrack.id);
+      const prevTrack = mockTracks[(currentIndex - 1 + mockTracks.length) % mockTracks.length];
+      playTrack(prevTrack);
+    }
+  };
+
+  const formatTime = (time: number) => {
+    if (isNaN(time)) return '0:00';
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
   const formatNumber = (num: number) => {
@@ -268,6 +356,7 @@ export default function Index() {
                       <Button
                         size="icon"
                         variant="outline"
+                        onClick={() => handleDownload(track)}
                         className="border-secondary/50 hover:bg-secondary hover:text-secondary-foreground neon-border-magenta"
                       >
                         <Icon name="Download" size={20} />
@@ -330,7 +419,26 @@ export default function Index() {
 
       {currentTrack && (
         <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-primary neon-border z-50 backdrop-blur-lg">
-          <div className="container mx-auto px-4 py-4">
+          <audio
+            ref={audioRef}
+            onTimeUpdate={handleTimeUpdate}
+            onLoadedMetadata={handleLoadedMetadata}
+            onEnded={skipToNext}
+          />
+          <div className="container mx-auto px-4 py-2">
+            <div className="mb-2">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                <span className="font-mono">{formatTime(currentTime)}</span>
+                <Slider
+                  value={[currentTime]}
+                  onValueChange={handleSeek}
+                  max={duration || 100}
+                  step={0.1}
+                  className="flex-1"
+                />
+                <span className="font-mono">{formatTime(duration)}</span>
+              </div>
+            </div>
             <div className="flex items-center gap-4">
               <img 
                 src={currentTrack.coverUrl} 
@@ -346,7 +454,7 @@ export default function Index() {
                 <Button size="icon" variant="ghost" className="hover:text-primary">
                   <Icon name="Shuffle" size={20} />
                 </Button>
-                <Button size="icon" variant="ghost" className="hover:text-primary">
+                <Button size="icon" variant="ghost" onClick={skipToPrevious} className="hover:text-primary">
                   <Icon name="SkipBack" size={20} />
                 </Button>
                 <Button 
@@ -356,7 +464,7 @@ export default function Index() {
                 >
                   <Icon name={isPlaying ? "Pause" : "Play"} size={24} />
                 </Button>
-                <Button size="icon" variant="ghost" className="hover:text-primary">
+                <Button size="icon" variant="ghost" onClick={skipToNext} className="hover:text-primary">
                   <Icon name="SkipForward" size={20} />
                 </Button>
                 <Button size="icon" variant="ghost" className="hover:text-primary">
@@ -379,8 +487,13 @@ export default function Index() {
                 <Button size="icon" variant="ghost" className="hover:text-secondary">
                   <Icon name="Heart" size={20} />
                 </Button>
-                <Button size="icon" variant="ghost" className="hover:text-primary">
-                  <Icon name="ListMusic" size={20} />
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  onClick={() => currentTrack && handleDownload(currentTrack)}
+                  className="hover:text-secondary"
+                >
+                  <Icon name="Download" size={20} />
                 </Button>
               </div>
             </div>
