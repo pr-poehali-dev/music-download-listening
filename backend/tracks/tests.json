@@ -1,0 +1,33 @@
+{
+  "tests": [
+    {
+      "name": "Get all tracks",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "tracks": "array"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Create new track",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "title": "Test Track",
+        "artist": "Test Artist",
+        "genre": "Electronic",
+        "duration": "3:45",
+        "audioUrl": "https://example.com/test.mp3",
+        "coverUrl": "https://example.com/cover.jpg"
+      },
+      "expectedStatus": 201,
+      "expectedBody": {
+        "track": "object",
+        "message": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

@@ -7,6 +7,7 @@ import { Slider } from '@/components/ui/slider';
 import Icon from '@/components/ui/icon';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { UploadTrackDialog } from '@/components/UploadTrackDialog';
 
 interface Track {
   id: number;
@@ -105,18 +106,42 @@ const mockArtists: Artist[] = [
 ];
 
 export default function Index() {
-  const [currentTrack, setCurrentTrack] = useState<Track | null>(mockTracks[0]);
+  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState([70]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<string>('all');
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [tracks, setTracks] = useState<Track[]>(mockTracks);
+  const [loading, setLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const genres = ['all', 'Synthwave', 'Electronic', 'Cyberpunk', 'Techno'];
 
-  const filteredTracks = mockTracks.filter(track => {
+  useEffect(() => {
+    loadTracks();
+  }, []);
+
+  const loadTracks = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('https://functions.poehali.dev/143927f6-1dc4-4923-b7ac-bd22dc1c91c8');
+      const data = await response.json();
+      if (response.ok && data.tracks) {
+        setTracks(data.tracks);
+        if (data.tracks.length > 0 && !currentTrack) {
+          setCurrentTrack(data.tracks[0]);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading tracks:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredTracks = tracks.filter(track => {
     const matchesSearch = track.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                          track.artist.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesGenre = selectedGenre === 'all' || track.genre === selectedGenre;
@@ -189,16 +214,16 @@ export default function Index() {
 
   const skipToNext = () => {
     if (currentTrack) {
-      const currentIndex = mockTracks.findIndex(t => t.id === currentTrack.id);
-      const nextTrack = mockTracks[(currentIndex + 1) % mockTracks.length];
+      const currentIndex = tracks.findIndex(t => t.id === currentTrack.id);
+      const nextTrack = tracks[(currentIndex + 1) % tracks.length];
       playTrack(nextTrack);
     }
   };
 
   const skipToPrevious = () => {
     if (currentTrack) {
-      const currentIndex = mockTracks.findIndex(t => t.id === currentTrack.id);
-      const prevTrack = mockTracks[(currentIndex - 1 + mockTracks.length) % mockTracks.length];
+      const currentIndex = tracks.findIndex(t => t.id === currentTrack.id);
+      const prevTrack = tracks[(currentIndex - 1 + tracks.length) % tracks.length];
       playTrack(prevTrack);
     }
   };
@@ -259,14 +284,14 @@ export default function Index() {
                 Слушай, скачивай и публикуй треки в киберпространстве
               </p>
               <div className="flex gap-4">
-                <Button className="bg-primary text-primary-foreground hover:bg-primary/90 neon-border font-semibold">
+                <Button 
+                  onClick={() => tracks.length > 0 && playTrack(tracks[0])}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 neon-border font-semibold"
+                >
                   <Icon name="Play" size={20} className="mr-2" />
                   Начать слушать
                 </Button>
-                <Button variant="outline" className="border-secondary text-secondary hover:bg-secondary/10 neon-border-magenta font-semibold">
-                  <Icon name="Upload" size={20} className="mr-2" />
-                  Загрузить трек
-                </Button>
+                <UploadTrackDialog onTrackUploaded={loadTracks} />
               </div>
             </div>
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl animate-pulse-neon"></div>
