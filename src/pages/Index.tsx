@@ -221,7 +221,7 @@ export default function Index() {
       <header className="border-b border-primary/30 sticky top-0 backdrop-blur-lg bg-background/80 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-orbitron font-bold neon-glow">NEON<span className="text-secondary neon-glow-magenta">BEATS</span></h1>
+            <h1 className="text-3xl font-orbitron font-bold neon-glow">NEON<span className="text-secondary neon-glow-magenta">VIBES</span></h1>
             <nav className="flex gap-6">
               <Button variant="ghost" className="text-foreground hover:text-primary transition-colors">
                 <Icon name="Home" size={20} className="mr-2" />
